@@ -14,57 +14,71 @@ const globalEnv = {
   sqrt: (...args) => Math.sqrt(args[0])
 }
 
-// Symbol parser
-const symbolParser = (input) => {
-  if (globalEnv[input] === undefined) return null
-  console.log('symbolParser', globalEnv[input])
-  if (globalEnv[input]) return [globalEnv[input], input.slice(input.length)]
-  return globalEnv[input]
-}
-// const numberParser = (input) => {
-//   console.log('numberParser', input)
-//   if (isNaN(Number(input))) return null
-//   return Number(input)
-// }
 // number parser
 const numberParser = input => {
   console.log('numberParser', input)
-  const output = input.match(/^-?((([1-9])(\d*))|(0))(\.\d+)?([Ee][+-]?\d+)?/)
-  console.log('valueParser', output)
+  const output = input.match(/^[+-]?((([1-9])(\d*))|(0))(\.\d+)?/)
   if (output) return [Number(output[0]), input.slice(output[0].length)]
   return null
 }
 
-// Value parser
-const valueParser = (input) => {
-  console.log('valueParser', input)
+// symbol parser
+const symbolParser = (input) => {
+  console.log('symbolParser', input)
+  if (input.startsWith('(')) return null
+
   input = input.trim()
-  return numberParser(input) || symbolParser(input)
+  let lFunction = ''
+  while (input[0] !== ' ') {
+    lFunction += input[0]
+    input = input.slice(1)
+  }
+  console.log('symbolParser lFunction', lFunction)
+  return [lFunction, input.slice(lFunction.length)]
 }
 
-const atomEval = (input) => {
-  console.log('atomEval', input)
+// compound eval
+const compoundEval = (expression) => {
+  if (!expression.startsWith('(')) return null
+
+  console.log('compoundEval', expression)
+  expression = expression.slice(1) // slice '('
+
+  const parsed = expressionEval(expression)
+  if (parsed === null) return null
+
+  const lFunction = parsed[0] // lFunction
+  expression = parsed[1] // args in string
   const output = []
-  while (input[0]) {
-    console.log('input[0]', input[0])
-    const value = valueParser(input[0])
-    console.log('value', value, value[0], value[1])
-    if (value === null) return null
-    output.push(value[0])
-    if (value[1] !== ' ') return null
-    input = value[1].trim()
+
+  console.log('compoundEval parsed', parsed, lFunction, parsed[1])
+
+  while (expression[0] !== ')') {
+    const args = expressionEval(expression)
+    console.log('compoundEval args', args)
+    if (args[0] === null) return null
+    output.push(args[0])
+    expression = args[1]
+    console.log('compoundEval expression', expression)
   }
-  return [output[0], input.slice(1)]
+  if (globalEnv[lFunction] !== undefined) return globalEnv[lFunction](...output)
 }
 
 // Checks for atom or expression and calls respective eval
 const expressionEval = (input) => {
+  console.log('expressionEval', input)
   input = input.trim()
-
-  // atom eval
-  return atomEval(input)
-//   const [lFunction, remainingInput] = [value[0], value[1]]
-//   if (globalEnv[lFunction] !== undefined) return globalEnv[lFunction](...remainingInput)
+  console.log('expressionEval trim', input)
+  return numberParser(input) || symbolParser(input) || compoundEval(input)
 }
 
-console.log(expressionEval('+'))
+// console.log(expressionEval('2'))
+// console.log(expressionEval('22'))
+// console.log(expressionEval('+22'))
+// console.log(expressionEval('+ 22')) // handle
+// console.log(expressionEval('+'))
+// console.log(expressionEval('0'))
+// console.log(expressionEval('+0'))
+// console.log(expressionEval('2.2'))
+// console.log(expressionEval('-2.2'))
+console.log(expressionEval('(+ 2 4 1 9)'))
