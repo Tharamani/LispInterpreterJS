@@ -1,46 +1,4 @@
-import { parsers } from './parse.js'
-
-const globalEnv = {
-  '+': (...args) => args.reduce((acc, cv) => acc + cv, 0),
-  '-': (...args) => args.reduce((acc, cv) => acc - cv),
-  '*': (...args) => args.reduce((acc, cv) => acc * cv, 1),
-  '/': (...args) => (args.length === 2 ? args[0] / args[1] : null),
-  '>=': (...args) => {
-    return args.map((val, i, arr) => {
-      if (arr[i + 1] !== undefined) return val >= arr[i + 1]
-    })
-      .filter(val => val !== undefined)
-      .every(val => val)
-  },
-  '<=': (...args) => {
-    return args.map((val, i, arr) => {
-      if (arr[i + 1] !== undefined) return val <= arr[i + 1]
-    })
-      .filter(val => val !== undefined)
-      .every(val => val)
-  },
-  '=': (...args) => {
-    return args.map((val, i, arr) => {
-      if (arr[i + 1] !== undefined) return val === arr[i + 1]
-    }).filter(val => val !== undefined).every(val => val)
-  },
-  '>': (...args) => {
-    return args.map((val, i, arr) => {
-      if (arr[i + 1] !== undefined) return val > arr[i + 1]
-    }).filter(val => val !== undefined).every(val => val)
-  },
-  '<': (...args) => {
-    return args.map((val, i, arr) => {
-      if (arr[i + 1] !== undefined) return val < arr[i + 1]
-    }).filter(val => val !== undefined).every(val => val)
-  },
-  '#t': true,
-  '#f': false,
-  pi: Math.PI,
-  sqrt: (...args) => Math.sqrt(args[0]),
-  list: (...args) => args,
-  pow: (...args) => (args.length === 2 ? Math.pow(args[0], args[1]) : null)
-}
+import { getArgs, parsers } from './parse.js'
 
 const specialForms = ['if', 'define', 'quote', 'lambda', 'set!', 'begin']
 
@@ -64,29 +22,11 @@ function symbolEval (input, env) {
   return env[input]
 }
 
-const atomEval = (input, env) => {
+export const atomEval = (input, env) => {
   console.log('atomEval input', input)
 
   if (numberEval(input) === 0) return 0
   return numberEval(input, env) || stringEval(input, env) || symbolEval(input, env)
-}
-
-// args array
-const getArgs = (input, env) => {
-  console.log('getArgs input', input.length)
-  const args = []
-  input = input.trim()
-  while (input[0] !== ')') {
-    const parsed = parsers(input)
-    // console.log('getArgs parsed', parsed)
-    if (parsed === null) return null
-    const value = parsed[0]
-    args.push(value)
-    input = parsed[1]
-  }
-  // console.log('getArgs args', args, input)
-  if (input[0] === ')') return args
-  throw new Error('Invalid expression')
 }
 
 // syntax:  (begin <expression1> <expression2> ...)
@@ -181,8 +121,8 @@ const lambdaEval = (args, env) => {
   return lambdaJS
 }
 
-// special forms
-function formParser (sFormsOp, args, env) {
+// special forms // Change name to eval
+export const specialFormEval = (sFormsOp, args, env) => {
   if (sFormsOp === 'if') return ifEval(args, env)
   if (sFormsOp === 'define') return defineEval(args, env)
   if (sFormsOp === 'quote') return quoteEval(args)
@@ -207,7 +147,7 @@ const compoundEval = (input, env) => {
   const args = getArgs(input, env) // get args to eval
   console.log('compoundEval , args', args)
 
-  if (specialForms.includes(operator)) return formParser(operator, args, env) // special forms
+  if (specialForms.includes(operator)) return specialFormEval(operator, args, env) // special forms
 
   const evalArgs = args.map(arg => {
     // console.log('compoundEval expressionEval(arg)', expressionEval(arg, env))
@@ -226,32 +166,9 @@ const compoundEval = (input, env) => {
   }
 }
 
-const expressionEval = (input, env) => {
+export const expressionEval = (input, env) => {
   console.log('expressionEval input', input)
   input = input.trim()
   if (input.startsWith('(')) return compoundEval(input, env)
   return atomEval(input, env)
-}
-
-export const main = (input) => {
-  try {
-    console.log('GIven input', input)
-
-    const parsed = parsers(input)
-    console.log('parsed', parsed)
-
-    if (input[0] === '\'') return input.slice(1)
-
-    if (parsed === null) return null
-    const parsedInput = parsed[0]
-    console.log('parsedInput', parsedInput)
-
-    const remainingString = parsed[1]
-    console.log('remainingString', remainingString)
-
-    if (remainingString === '') return expressionEval(parsedInput, globalEnv)
-    throw new Error('Parsing error, Invalid expression')
-  } catch (error) {
-    console.log('<<<<<<<<<<<<<<<<< Error >>>>>>>>>>>', error)
-  }
 }

@@ -48,3 +48,21 @@ export const parsers = (input) => {
 
   return numberParser(input) || stringParser(input) || symbolParser(input) || expressionParser(input)
 }
+
+// args array
+export const getArgs = (input, env) => {
+  console.log('getArgs input', input.length)
+  const args = []
+  input = input.trim()
+  while (input[0] !== ')') {
+    const parsed = parsers(input)
+    // console.log('getArgs parsed', parsed)
+    if (parsed === null) return null
+    const value = parsed[0]
+    args.push(value)
+    input = parsed[1]
+  }
+  // console.log('getArgs args', args, input)
+  if (input[0] === ')') return args
+  throw new Error('Invalid expression')
+}

@@ -1,4 +1,4 @@
-import { main } from './lispParseEval.js'
+import { main } from './main.js'
 
 // lamda
 console.log(main('(begin ((lambda (x) (+ x x)) 5))') === 10)
