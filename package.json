@@ -1,0 +1,20 @@
+{
+  "name": "lispinterpreterjs",
+  "version": "1.0.0",
+  "description": "lisp",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Tharamani/LispInterpreterJS.git"
+  },
+  "type":"module",
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Tharamani/LispInterpreterJS/issues"
+  },
+  "homepage": "https://github.com/Tharamani/LispInterpreterJS#readme"
+}

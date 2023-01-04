@@ -1,3 +1,5 @@
+import { parsers } from './parse.js'
+
 const globalEnv = {
   '+': (...args) => args.reduce((acc, cv) => acc + cv, 0),
   '-': (...args) => args.reduce((acc, cv) => acc - cv),
@@ -35,20 +37,12 @@ const globalEnv = {
   '#t': true,
   '#f': false,
   pi: Math.PI,
-  sqrt: (args) => (args.length === 1 ? Math.sqrt(args[0]) : null),
+  sqrt: (...args) => Math.sqrt(args[0]),
   list: (...args) => args,
   pow: (...args) => (args.length === 2 ? Math.pow(args[0], args[1]) : null)
 }
 
 const specialForms = ['if', 'define', 'quote', 'lambda', 'set!', 'begin']
-
-// number parser
-const numberParser = input => {
-  console.log('numberParser', input)
-  const output = input.match(/^[+-]?((([1-9])(\d*))|(0))(\.\d+)?/)
-  if (output) return [output[0], input.slice(output[0].length).trim()]
-  return null
-}
 
 const numberEval = input => {
   console.log('numberEval', Number(input))
@@ -56,57 +50,12 @@ const numberEval = input => {
   return Number(input)
 }
 
-const stringParser = (input) => {
-  console.log('stringParser', input)
-  // console.log('stringParser', input, input.startsWith('('))
-  if (!input.startsWith('"')) return null
-  const matched = input.match(/".*"/)
-  // console.log('stringParser matched', matched)
-  if (matched !== null) return [matched[0].trim(), input.slice(input.length).trim()]
-  return null
-}
-
 const stringEval = (input) => {
   console.log('stringEval', input)
+  // if (!input.startsWith('"')) return null
   const matched = input.match(/".*"/) // #t, #f, pi is treated as string
-  // console.log('stringEval matched', matched)
   if (matched !== null) return input
-  // if (typeof input === 'string' || input instanceof String) return input
   return null
-}
-
-const expressionParser = (input) => {
-  console.log('expressionParser', input)
-  input = input.trim()
-  // expression
-  let expressionStr = input.slice(1) // input = (...) ) // expression = ...) )
-  // console.log('expressionStr', input)
-  let count = 1
-  while (count !== 0 && expressionStr[0]) {
-    if (expressionStr[0] === '(') count++
-    if (expressionStr[0] === ')') count--
-    expressionStr = expressionStr.slice(1)
-  }
-  // console.log(input.slice(0, input.length - expressionStr.length).trim(), expressionStr.trim(), 'count', count)
-  if (count === 0) return [input.slice(0, input.length - expressionStr.length).trim(), expressionStr.trim()]
-  return null
-}
-
-// symbol parser // use regex to parse symbol
-// https://schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-5.html#%_sec_2.1
-const symbolParser = (input) => {
-  console.log('symbolParser', input)
-  input = input.trim()
-  const matched = input.match(/((^([a-zA-Z!$%&*+-./:<=>?@^_~#t#fpi])+)(\w)*)/)
-  // console.log('symbolParser matched ', matched)
-  if (matched) return [matched[0], input.slice(matched[0].length).trim()]
-  return null
-}
-
-const parsers = (input) => {
-  console.log('parsers ', input)
-  input = input.trim()
-  return numberParser(input) || stringParser(input) || symbolParser(input) || expressionParser(input)
 }
 
 function symbolEval (input, env) {
@@ -117,7 +66,7 @@ function symbolEval (input, env) {
 
 const atomEval = (input, env) => {
   console.log('atomEval input', input)
-  if (input[0] === '\'') return input.slice(1)
+
   if (numberEval(input) === 0) return 0
   return numberEval(input, env) || stringEval(input, env) || symbolEval(input, env)
 }
@@ -284,12 +233,14 @@ const expressionEval = (input, env) => {
   return atomEval(input, env)
 }
 
-const main = (input) => {
+export const main = (input) => {
   try {
     console.log('GIven input', input)
 
     const parsed = parsers(input)
     console.log('parsed', parsed)
+
+    if (input[0] === '\'') return input.slice(1)
 
     if (parsed === null) return null
     const parsedInput = parsed[0]
@@ -304,111 +255,3 @@ const main = (input) => {
     console.log('<<<<<<<<<<<<<<<<< Error >>>>>>>>>>>', error)
   }
 }
-
-// lamda
-// console.log(main('((lambda (x) (+ x x)) 5)') === 10)
-// console.log(typeof (main('(lambda (x) (+ x x))')) === 'function')
-// main('(define x 4)')
-// console.log(main('((lambda (y) (+ y x)) 5)') === 9)
-
-// main('(define twice (lambda (x) (* 2 x)))')
-// console.log(main('(twice 5)') === 10)
-// main('(define repeat (lambda (f) (lambda (x) (f (f x)))))')
-// console.log(main('((repeat twice) 10)') === 40)
-
-// console.log(main('(pow 2 16)') === 65536)
-
-// main('(define circle-area (lambda (r) (* pi (* r r))))')
-// console.log(main('(circle-area 3)') === 28.274333882308138)
-
-// main('(define fact (lambda (n) (if (<= n 1) 1 (* n (fact (- n 1))))))')
-// console.log(main('(fact 10)') === 3628800)
-// console.log(main('(fact 100)') === 9.33262154439441e+157)
-
-// main('(define circle-area (lambda (r) (* pi (* r r))))')
-// main('(define fact (lambda (n) (if (<= n 1) 1 (* n (fact (- n 1))))))')
-// console.log(main('(circle-area (fact 10))') === 41369087205782.695)
-
-// quote
-// console.log(main('\'(+ 1 2)'))
-// console.log(main('\'#(a b c)'))
-// console.log(main('\'\'a'))
-// console.log(main('(quote a)'))
-// console.log(main('(quote (+ 1 2))'))
-
-// if
-// console.log(main('(if (= 12 12) (+ 78 2) 9)'))
-// console.log(main('(if #f 1 0)'))
-// console.log(main('(if #t 1 (define x 5))'))
-// console.log(main('(+ 2 3 (if (> 3 2) 3 2) (+ 01 222))'))
-// console.log(main('(if (< 3 45) (+ 1 2) "failedOutput")'))
-
-// set!
-// main('(set! r 10)')
-// console.log('test set!!>>>>>>>>', main('(+ r r)'))
-
-// begin
-// console.log(main('(begin 9 66)'))
-// console.log(main('(begin (define r 10) (* pi (* r r)))'))
-// console.log(main('(begin (define r 10) (+ 1 2(* 2 (* r r))))'))
-
-// define
-// console.log(main('(define r 10)'))
-// console.log('>>>>>>>>>>>>>>>>>>>>>>>>', main('r'))
-
-// console.log(main('(define a (+ 1 2 3))'))
-// console.log('>>>>>>>>>>>>>>>>>>>>>>>> a ', main('a'))
-
-// console.log(main('(define x (+ 2 10 (* pi 2)))'))
-// console.log('>>>>>', main('x'))
-
-// main('(define define 1)')
-// console.log('>>>>>', main('define'))
-
-// main('(define r 1)')
-// console.log(main('(+ r r)'))
-
-// console.log(main('(define r 10)'))
-// console.log(main('9r66'))
-
-// expression
-// console.log(main('(+ 2 3 2 3)'))
-// console.log(main('(+2 3)'))
-// console.log(main('(+ 2 3'))
-// console.log(main('(+ 2 (+ 2 4))'))
-// console.log(main('(+ 2 (+ 2 4)))'))
-// console.log(main('(+ 2 4 1 9 -1 1.2)'))
-// console.log(main('(+ 2  4  1  9)'))
-// console.log(main('(+ 2 (* 2 4) + 3)')) // invalid expression, identifier
-// console.log(main('(+ 2 (+ 2 4 (* 2 2)) (+ 3) 1)'))
-// console.log(main('(+ 3 3 (+ 1 (/ 2 2))  5)'))
-// console.log(main('(+ 2 (+ 2 4 (*2 2)) (+ 3) 1)'))
-
-// numbers
-// console.log(main('+23'))
-// console.log(main('-2.2'))
-// console.log(main('2'))
-// console.log(main('+0'))
-// console.log(main('(sqrt)'))
-// console.log(main('(sqrt 4)'))
-// string
-// console.log(main('"a"'))
-// console.log(main('"xyz"'))
-
-// invalid
-// console.log(main('+0abc'))
-
-// symbols
-// console.log(main('#t'))
-// console.log(main('#f'))
-// console.log(main('pi'))
-// console.log(main('-'))
-// console.log(main('<='))
-// console.log(main('lamda'))
-// console.log(main('the-word-recursion-has-many-meanings'))
-
-// list
-// console.log(main('(list 1 2 3 4)'))
-// console.log(main('(quote ("this" "is" "a" "list"))'))
-// console.log(main('(define a (list 1 2 3 4))'))
-// console.log('<<<<<<<<<< a >>>>>>>>>>>', main('a'))
