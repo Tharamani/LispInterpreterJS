@@ -8,7 +8,7 @@ Project's Title - (How to Write a (Lisp) Interpreter (in Javascript))
 2. Project Description: Application accept expression(lisp), parses expression and evaluates expression
 > Evaluates basic Mathematical, comparision, logical operations
 > Evaluates special forms ['if', 'define', 'quote', 'lambda', 'set!', 'begin']
-GlobalEnvvironment is a object that contains key as function names and values as functions
+GlobalEnvvironment is a object that contains function name as key and function as value
 written in JS.
 
 There are 2 main phases :
